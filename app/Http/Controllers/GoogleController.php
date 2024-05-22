@@ -76,6 +76,32 @@ class GoogleController extends Controller
         } catch (\Exception $e) {
             return response()->json(['error' => 'An error occurred: ' . $e->getMessage()], 500);
         }
+    }
+    public function listSearch($searchItem = 'is:unread')
+    {
+        $client_id = env('GOOGLE_CLIENT_ID');
+        $client_secret = env('GOOGLE_CLIENT_SECRET');
+        $refresh_token = env('GOOGLE_REFRESH_TOKEN');
+
+        // Set up the Google Client
+        $client = new Client();
+        $client->setClientId($client_id);
+        $client->setClientSecret($client_secret);
+        $client->setAccessType('offline');
+        $client->setApprovalPrompt('force');
+        $client->refreshToken($refresh_token);
+
+        $gmail = new Gmail($client);
+        try {
+            $response = $gmail->users_threads->listUsersThreads('me',['q' => $searchItem]);
+            $threads = $response->getThreads();
+            if (empty($threads)) {
+                return response()->json(['message' => 'No threads found.']);
+            }
+            return response()->json(['threads' => $threads]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'An error occurred: ' . $e->getMessage()], 500);
+        }
 
     
     }
