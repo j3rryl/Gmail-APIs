@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Google\Client;
+use Google\Service\Gmail;
 
 class GoogleController extends Controller
 {
@@ -51,36 +53,30 @@ class GoogleController extends Controller
 
     public function listThreads()
     {
-        $credentials = [
-            'client_id' => env('GOOGLE_CLIENT_ID'),
-            'client_secret' => env('GOOGLE_CLIENT_SECRET'),
-            'refresh_token' => env('GOOGLE_REFRESH_TOKEN'),
-            'type' => 'authorized_user'
-        ];
+        $client_id = env('GOOGLE_CLIENT_ID');
+        $client_secret = env('GOOGLE_CLIENT_SECRET');
+        $refresh_token = env('GOOGLE_REFRESH_TOKEN');
 
-        $authJson = json_encode($credentials);
-        $auth = Http::withBody($authJson, 'json');
-        
-        $response = Http::withToken(
-            $auth->post('https://oauth2.googleapis.com/token', [
-                'grant_type' => 'refresh_token',
-            ])
-            ->json()
-        )
-        ->get('https://www.googleapis.com/gmail/v1/users/me/threads');
+        // Set up the Google Client
+        $client = new Client();
+        $client->setClientId($client_id);
+        $client->setClientSecret($client_secret);
+        $client->setAccessType('offline');
+        $client->setApprovalPrompt('force');
+        $client->refreshToken($refresh_token);
 
-        if ($response->failed()) {
-            \Log::error('Failed to list Gmail threads: ' . $response->body());
-            return;
+        $gmail = new Gmail($client);
+        try {
+            $response = $gmail->users_threads->listUsersThreads('me');
+            $threads = $response->getThreads();
+            if (empty($threads)) {
+                return response()->json(['message' => 'No threads found.']);
+            }
+            return response()->json(['threads' => $threads]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'An error occurred: ' . $e->getMessage()], 500);
         }
 
-        $threads = $response->json('threads');
-
-        if (empty($threads)) {
-            echo "No threads found.";
-            return;
-        }
-
-        echo "Threads: " . json_encode($threads, JSON_PRETTY_PRINT);
+    
     }
 }
