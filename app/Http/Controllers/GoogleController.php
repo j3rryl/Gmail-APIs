@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Http;
 use Google\Client;
 use App\Models\ThreadHistory;
 use Google\Service\Gmail;
+use Carbon\Carbon;
 
 class GoogleController extends Controller
 {
@@ -84,6 +85,7 @@ class GoogleController extends Controller
         $client_id = env('GOOGLE_CLIENT_ID');
         $client_secret = env('GOOGLE_CLIENT_SECRET');
         $refresh_token = env('GOOGLE_REFRESH_TOKEN');
+        $currentTimestamp = Carbon::now();
 
         // Set up the Google Client
         $client = new Client();
@@ -100,7 +102,7 @@ class GoogleController extends Controller
             if (empty($threads)) {
                 return response()->json(['message' => 'No threads found.']);
             }
-            $existingThreadIds = ThreadHistory::pluck('threadId')->toArray();
+            $existingThreadIds = ThreadHistory::latest('id')->take(20)->pluck('threadId')->toArray();
             $newThreads = [];
             foreach ($threads as $thread) {
                 $threadId = $thread->getId();
@@ -114,9 +116,14 @@ class GoogleController extends Controller
                         'threadId' => $threadId,
                         'historyId' => $historyId,
                         'snippet' => $snippet,
+                        'created_at'=> $currentTimestamp,
+                        'updated_at'=> $currentTimestamp
                     ];
                 }
             }
+            usort($newThreads, function ($a, $b) {
+                return $a['historyId'] <=> $b['historyId'];
+            });
             if (!empty($newThreads)) {
                 info("New messages in inbox.");
                 info($newThreads);
