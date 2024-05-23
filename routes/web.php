@@ -9,5 +9,5 @@ Route::get('/', function () {
 
 Route::get("/me", [GoogleController::class, "getAccessToken"])->name("api.me");
 Route::get("/read", [GoogleController::class, "readAll"])->name("api.readAll");
-Route::get("/read-me", [GoogleController::class, "listThreads"])->name("api.list");
+Route::get("/list", [GoogleController::class, "listThreads"])->name("api.list");
 Route::get("/search", [GoogleController::class, "listSearch"])->name("api.search");

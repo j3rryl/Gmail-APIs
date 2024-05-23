@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Google\Client;
+use App\Models\ThreadHistory;
 use Google\Service\Gmail;
 
 class GoogleController extends Controller
@@ -72,12 +73,13 @@ class GoogleController extends Controller
             if (empty($threads)) {
                 return response()->json(['message' => 'No threads found.']);
             }
+            
             return response()->json(['threads' => $threads]);
         } catch (\Exception $e) {
             return response()->json(['error' => 'An error occurred: ' . $e->getMessage()], 500);
         }
     }
-    public function listSearch($searchItem = 'is:unread')
+    public function listSearch($searchItem = 'in:inbox is:unread category:primary')
     {
         $client_id = env('GOOGLE_CLIENT_ID');
         $client_secret = env('GOOGLE_CLIENT_SECRET');
@@ -97,6 +99,30 @@ class GoogleController extends Controller
             $threads = $response->getThreads();
             if (empty($threads)) {
                 return response()->json(['message' => 'No threads found.']);
+            }
+            $existingThreadIds = ThreadHistory::pluck('threadId')->toArray();
+            $newThreads = [];
+            foreach ($threads as $thread) {
+                $threadId = $thread->getId();
+                $historyId = $thread->getHistoryId();
+                $snippet = $thread->getSnippet();
+    
+                // Check if the thread is already in the database
+                if (!in_array($threadId, $existingThreadIds)) {
+                    // If it's a new thread, add to the newThreads array
+                    $newThreads[] = [
+                        'threadId' => $threadId,
+                        'historyId' => $historyId,
+                        'snippet' => $snippet,
+                    ];
+                }
+            }
+            if (!empty($newThreads)) {
+                info("New messages in inbox.");
+                info($newThreads);
+                ThreadHistory::insert($newThreads);
+            } else {
+                info("No new messages found.");
             }
             return response()->json(['threads' => $threads]);
         } catch (\Exception $e) {
