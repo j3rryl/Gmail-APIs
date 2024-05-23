@@ -59,7 +59,6 @@ class GoogleController extends Controller
         $client_secret = env('GOOGLE_CLIENT_SECRET');
         $refresh_token = env('GOOGLE_REFRESH_TOKEN');
 
-        // Set up the Google Client
         $client = new Client();
         $client->setClientId($client_id);
         $client->setClientSecret($client_secret);
@@ -87,7 +86,6 @@ class GoogleController extends Controller
         $refresh_token = env('GOOGLE_REFRESH_TOKEN');
         $currentTimestamp = Carbon::now();
 
-        // Set up the Google Client
         $client = new Client();
         $client->setClientId($client_id);
         $client->setClientSecret($client_secret);
@@ -109,9 +107,7 @@ class GoogleController extends Controller
                 $historyId = $thread->getHistoryId();
                 $snippet = $thread->getSnippet();
     
-                // Check if the thread is already in the database
                 if (!in_array($threadId, $existingThreadIds)) {
-                    // If it's a new thread, add to the newThreads array
                     $newThreads[] = [
                         'threadId' => $threadId,
                         'historyId' => $historyId,
@@ -135,7 +131,18 @@ class GoogleController extends Controller
         } catch (\Exception $e) {
             return response()->json(['error' => 'An error occurred: ' . $e->getMessage()], 500);
         }
+    }
 
-    
+    public function exposed(Request $request){
+        info("New message has arrived!");
+        $encodedData = $request->input('message.data');
+
+        if ($encodedData) {
+            $decodedString = base64_decode($encodedData);
+            $decodedData = json_decode($decodedString, true);
+            info("Decoded data: ", $decodedData);
+        } else {
+            info("No data property found in the message.");
+        }
     }
 }
