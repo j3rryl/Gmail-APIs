@@ -133,7 +133,7 @@ class GoogleController extends Controller
         }
     }
 
-    public function exposed(Request $request){
+    public function webhook(Request $request){
         info("New message has arrived!");
         $encodedData = $request->input('message.data');
         if ($encodedData) {

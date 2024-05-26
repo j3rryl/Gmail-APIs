@@ -11,4 +11,4 @@ Route::get("/me", [GoogleController::class, "getAccessToken"])->name("api.me");
 Route::get("/read", [GoogleController::class, "readAll"])->name("api.readAll");
 Route::get("/list", [GoogleController::class, "listThreads"])->name("api.list");
 Route::get("/search", [GoogleController::class, "listSearch"])->name("api.search");
-Route::post("/exposed", [GoogleController::class, "exposed"])->name("api.exposed");
+Route::post("/exposed", [GoogleController::class, "webhook"])->name("api.webhook");
