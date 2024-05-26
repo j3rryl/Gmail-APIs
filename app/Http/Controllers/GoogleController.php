@@ -136,11 +136,11 @@ class GoogleController extends Controller
     public function exposed(Request $request){
         info("New message has arrived!");
         $encodedData = $request->input('message.data');
-
         if ($encodedData) {
             $decodedString = base64_decode($encodedData);
             $decodedData = json_decode($decodedString, true);
             info("Decoded data: ", $decodedData);
+            $this->listSearch();
         } else {
             info("No data property found in the message.");
         }
